@@ -1,0 +1,440 @@
+@page "/"
+@inject IJSRuntime JS
+
+<PageTitle>PicSwap - Image Converter</PageTitle>
+
+<div class="max-w-6xl mx-auto">
+    <!-- Hero Section -->
+    <div class="text-center mb-12">
+        <h2 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+            Convert Images Instantly
+        </h2>
+        <p class="text-xl text-gray-600 dark:text-gray-400">
+            Convert your images to PNG or WebP format entirely in your browser. Fast, secure, and private.
+        </p>
+    </div>
+
+    <!-- Upload Section -->
+    @if (!hasUploadedImages)
+    {
+        <div class="card mb-8">
+            <div class="upload-zone @dragClass"
+                 @ondrop="HandleDrop"
+                 @ondrop:preventDefault
+                 @ondragenter="HandleDragEnter"
+                 @ondragenter:preventDefault
+                 @ondragleave="HandleDragLeave"
+                 @ondragover:preventDefault>
+                
+                <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                </svg>
+                
+                <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Drag & Drop Images Here
+                </h3>
+                <p class="text-gray-500 dark:text-gray-400 mb-4">
+                    or click to browse
+                </p>
+                
+                <InputFile OnChange="HandleFileSelection" 
+                          multiple 
+                          accept="image/*" 
+                          class="hidden" 
+                          id="fileInput" />
+                
+                <label for="fileInput" class="btn-primary inline-block cursor-pointer">
+                    Select Images
+                </label>
+                
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-4">
+                    Supports: JPG, PNG, GIF, BMP, WebP • Max 10MB per file
+                </p>
+            </div>
+        </div>
+    }
+
+    <!-- Processing Status -->
+    @if (isProcessing)
+    {
+        <div class="card mb-8 text-center">
+            <div class="animate-spin w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p class="text-lg font-semibold text-gray-700 dark:text-gray-300">Processing images...</p>
+        </div>
+    }
+
+    <!-- Error Message -->
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-8">
+            <div class="flex items-start">
+                <svg class="w-6 h-6 text-red-600 dark:text-red-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                </svg>
+                <div>
+                    <h3 class="font-semibold text-red-800 dark:text-red-300 mb-1">Error</h3>
+                    <p class="text-red-700 dark:text-red-400">@errorMessage</p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Images Grid -->
+    @if (hasUploadedImages)
+    {
+        <div class="mb-8 flex justify-between items-center">
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">
+                Your Images (@uploadedImages.Count)
+            </h3>
+            <button @onclick="ClearAll" class="btn-secondary">
+                Clear All
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            @foreach (var image in uploadedImages)
+            {
+                <div class="card">
+                    <!-- Original Image -->
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            Original: @image.FileName
+                        </h4>
+                        <img src="@image.OriginalDataUrl" 
+                             alt="Original" 
+                             class="w-full rounded-lg shadow-md mb-2 border border-gray-200 dark:border-gray-700" />
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            Size: @FormatFileSize(image.OriginalSize)
+                        </p>
+                    </div>
+
+                    <!-- Conversion Options -->
+                    <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                        <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-4">Convert Options</h4>
+                        
+                        <!-- Resize Options -->
+                        <div class="mb-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                            <label class="flex items-center mb-3">
+                                <input type="checkbox" 
+                                       @bind="image.EnableResize" 
+                                       class="w-4 h-4 text-primary-600 rounded" />
+                                <span class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Enable Resize</span>
+                            </label>
+                            
+                            @if (image.EnableResize)
+                            {
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Width (px)</label>
+                                        <input type="number" 
+                                               @bind="image.TargetWidth" 
+                                               min="1"
+                                               max="4096"
+                                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Height (px)</label>
+                                        <input type="number" 
+                                               @bind="image.TargetHeight" 
+                                               min="1"
+                                               max="4096"
+                                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Quality Slider -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Quality: @((int)(image.Quality * 100))%
+                            </label>
+                            <input type="range" 
+                                   @bind="image.Quality" 
+                                   @bind:event="oninput"
+                                   min="0.1" 
+                                   max="1" 
+                                   step="0.1"
+                                   class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+                        </div>
+
+                        <!-- Convert Buttons -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <button @onclick="() => ConvertImage(image, ConversionFormat.PNG)" 
+                                    disabled="@isProcessing"
+                                    class="btn-primary">
+                                Convert to PNG
+                            </button>
+                            <button @onclick="() => ConvertImage(image, ConversionFormat.WebP)" 
+                                    disabled="@isProcessing"
+                                    class="btn-primary">
+                                Convert to WebP
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Converted Images -->
+                    @if (image.ConvertedImages.Any())
+                    {
+                        <div class="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+                            <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-4">Converted Images</h4>
+                            
+                            @foreach (var converted in image.ConvertedImages)
+                            {
+                                <div class="mb-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <span class="font-medium text-green-800 dark:text-green-300">
+                                            @converted.Format
+                                        </span>
+                                        <span class="text-sm text-green-700 dark:text-green-400">
+                                            @FormatFileSize(converted.Size) 
+                                            @if (converted.Size < image.OriginalSize)
+                                            {
+                                                <span class="ml-2">(@Math.Round((1 - (double)converted.Size / image.OriginalSize) * 100, 1)% smaller)</span>
+                                            }
+                                        </span>
+                                    </div>
+                                    <img src="@converted.DataUrl" 
+                                         alt="Converted" 
+                                         class="w-full rounded-lg shadow-md mb-3 border border-green-200 dark:border-green-700" />
+                                    <button @onclick="() => DownloadImage(converted.DataUrl, converted.FileName)" 
+                                            class="w-full btn-primary">
+                                        <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                        </svg>
+                                        Download @converted.FileName
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Features Section -->
+    @if (!hasUploadedImages)
+    {
+        <div class="grid md:grid-cols-3 gap-8 mt-12">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">100% Private</h3>
+                <p class="text-gray-600 dark:text-gray-400">All processing happens in your browser. Your images never leave your device.</p>
+            </div>
+            
+            <div class="text-center">
+                <div class="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Lightning Fast</h3>
+                <p class="text-gray-600 dark:text-gray-400">No uploads or downloads needed. Convert images instantly with no waiting.</p>
+            </div>
+            
+            <div class="text-center">
+                <div class="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Flexible Options</h3>
+                <p class="text-gray-600 dark:text-gray-400">Resize, adjust quality, and convert to multiple formats with ease.</p>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    // Models
+    private class ImageData
+    {
+        public string FileName { get; set; } = "";
+        public string OriginalDataUrl { get; set; } = "";
+        public long OriginalSize { get; set; }
+        public bool EnableResize { get; set; }
+        public int TargetWidth { get; set; } = 800;
+        public int TargetHeight { get; set; } = 600;
+        public double Quality { get; set; } = 0.9;
+        public List<ConvertedImageData> ConvertedImages { get; set; } = new();
+    }
+
+    private class ConvertedImageData
+    {
+        public string Format { get; set; } = "";
+        public string DataUrl { get; set; } = "";
+        public string FileName { get; set; } = "";
+        public long Size { get; set; }
+    }
+
+    private enum ConversionFormat
+    {
+        PNG,
+        WebP
+    }
+
+    // State
+    private List<ImageData> uploadedImages = new();
+    private bool isProcessing = false;
+    private string errorMessage = "";
+    private string dragClass = "";
+    
+    private bool hasUploadedImages => uploadedImages.Any();
+    
+    private const long MaxFileSize = 10 * 1024 * 1024; // 10MB
+
+    // Event Handlers
+    private void HandleDragEnter()
+    {
+        dragClass = "dragover";
+    }
+
+    private void HandleDragLeave()
+    {
+        dragClass = "";
+    }
+
+    private void HandleDrop(DragEventArgs e)
+    {
+        dragClass = "";
+        // Note: Blazor doesn't support DataTransfer files directly yet
+        // Users will need to use the file input instead
+    }
+
+    private async Task HandleFileSelection(InputFileChangeEventArgs e)
+    {
+        errorMessage = "";
+        isProcessing = true;
+        
+        try
+        {
+            var files = e.GetMultipleFiles(10); // Max 10 files
+            
+            foreach (var file in files)
+            {
+                // Validate file size
+                if (file.Size > MaxFileSize)
+                {
+                    errorMessage = $"File {file.Name} is too large. Maximum size is 10MB.";
+                    continue;
+                }
+
+                // Validate file type
+                if (!file.ContentType.StartsWith("image/"))
+                {
+                    errorMessage = $"File {file.Name} is not a valid image.";
+                    continue;
+                }
+
+                try
+                {
+                    // Read file as base64
+                    var buffer = new byte[file.Size];
+                    await file.OpenReadStream(MaxFileSize).ReadAsync(buffer);
+                    var base64 = Convert.ToBase64String(buffer);
+                    var dataUrl = $"data:{file.ContentType};base64,{base64}";
+
+                    uploadedImages.Add(new ImageData
+                    {
+                        FileName = file.Name,
+                        OriginalDataUrl = dataUrl,
+                        OriginalSize = file.Size
+                    });
+                }
+                catch (Exception ex)
+                {
+                    errorMessage = $"Error loading {file.Name}: {ex.Message}";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task ConvertImage(ImageData image, ConversionFormat format)
+    {
+        isProcessing = true;
+        errorMessage = "";
+        
+        try
+        {
+            var mimeType = format == ConversionFormat.PNG ? "image/png" : "image/webp";
+            var extension = format == ConversionFormat.PNG ? ".png" : ".webp";
+            
+            // Call JavaScript to perform conversion
+            var result = await JS.InvokeAsync<ConvertedImageResult>("imageConverter.convertImage",
+                image.OriginalDataUrl,
+                mimeType,
+                image.Quality,
+                image.EnableResize ? image.TargetWidth : 0,
+                image.EnableResize ? image.TargetHeight : 0
+            );
+
+            // Generate filename
+            var baseFileName = Path.GetFileNameWithoutExtension(image.FileName);
+            var newFileName = $"{baseFileName}_converted{extension}";
+
+            // Add to converted images
+            image.ConvertedImages.Add(new ConvertedImageData
+            {
+                Format = format.ToString(),
+                DataUrl = result.DataUrl,
+                FileName = newFileName,
+                Size = result.Size
+            });
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Conversion error: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task DownloadImage(string dataUrl, string fileName)
+    {
+        await JS.InvokeVoidAsync("imageConverter.downloadImage", dataUrl, fileName);
+    }
+
+    private void ClearAll()
+    {
+        uploadedImages.Clear();
+        errorMessage = "";
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    // JavaScript interop result class
+    private class ConvertedImageResult
+    {
+        public string DataUrl { get; set; } = "";
+        public long Size { get; set; }
+    }
+}

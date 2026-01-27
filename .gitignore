@@ -1,0 +1,31 @@
+## Blazor WebAssembly
+bin/
+obj/
+dist/
+.vs/
+.vscode/
+*.user
+*.suo
+
+## Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+## Tailwind CSS
+Picswap.Client/wwwroot/css/app.css
+
+## OS
+.DS_Store
+Thumbs.db
+
+## IDE
+.idea/
+*.swp
+*.swo
+*~
+
+## Build outputs
+publish/
+*.dll
+*.pdb

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PicSwap - Image Converter</title>
+    <meta name="description" content="Convert images to PNG and WebP formats entirely in your browser. Fast, secure, and private image conversion with no uploads required.">
+    <meta name="keywords" content="image converter, png converter, webp converter, online image tool, image resize">
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="PicSwap - Free Online Image Converter">
+    <meta property="og:description" content="Convert images to PNG and WebP formats entirely in your browser.">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖼️</text></svg>">
+    
+    <!-- Tailwind CSS -->
+    <link href="css/app.css" rel="stylesheet" />
+</head>
+
+<body>
+    <div id="app">
+        <div class="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+            <div class="text-center">
+                <div class="animate-spin w-16 h-16 border-4 border-primary-600 border-t-transparent rounded-full mx-auto mb-6"></div>
+                <h1 class="text-2xl font-bold text-gray-800 mb-2">Loading PicSwap...</h1>
+                <p class="text-gray-600">Preparing your image converter</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui" class="fixed bottom-0 left-0 right-0 bg-red-600 text-white p-4 shadow-lg z-50" style="display: none;">
+        <div class="container mx-auto flex items-center justify-between">
+            <div class="flex items-center">
+                <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                </svg>
+                <span>An error has occurred. This application may no longer respond until reloaded.</span>
+            </div>
+            <button class="bg-white text-red-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors" onclick="location.reload()">
+                Reload
+            </button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script src="js/imageConverter.js"></script>
+</body>
+
+</html>

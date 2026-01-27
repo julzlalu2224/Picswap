@@ -1,0 +1,12 @@
+{
+  "name": "picswap-client",
+  "version": "1.0.0",
+  "description": "Image converter built with Blazor WebAssembly and Tailwind CSS",
+  "scripts": {
+    "build:css": "npx tailwindcss -i ./Styles/app.css -o ./wwwroot/css/app.css --minify",
+    "watch:css": "npx tailwindcss -i ./Styles/app.css -o ./wwwroot/css/app.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.1"
+  }
+}
