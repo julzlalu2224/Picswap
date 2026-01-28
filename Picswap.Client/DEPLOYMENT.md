@@ -8,54 +8,9 @@
 
 ## 🚀 Deployment Steps
 
-### Option 1: Automatic Deployment via Git (Recommended)
+### Option 1: Direct Upload (Recommended - Easiest)
 
-1. **Push your code to GitHub**
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit"
-   git branch -M main
-   git remote add origin https://github.com/YOUR_USERNAME/picswap.git
-   git push -u origin main
-   ```
-
-2. **Go to Cloudflare Dashboard**
-   - Navigate to https://dash.cloudflare.com/
-   - Click on **Pages** in the sidebar
-   - Click **Create a project**
-
-3. **Connect to Git**
-   - Click **Connect to Git**
-   - Select **GitHub**
-   - Authorize Cloudflare Pages to access your repositories
-   - Select your PicSwap repository
-
-4. **Configure Build Settings**
-   ```
-   Project name: picswap (or your preferred name)
-   Production branch: main
-   Framework preset: None
-   Build command: cd Picswap.Client && npm install && npm run build:css && dotnet publish -c Release -o dist
-   Build output directory: Picswap.Client/dist/wwwroot
-   Root directory: (leave blank or /)
-   ```
-
-5. **Environment Variables**
-   No environment variables needed for this project!
-
-6. **Deploy**
-   - Click **Save and Deploy**
-   - Wait for the build to complete (usually 2-5 minutes)
-   - Your site will be live at `https://picswap-xxx.pages.dev`
-
-7. **Custom Domain (Optional)**
-   - Go to your Pages project settings
-   - Click **Custom domains**
-   - Add your domain (e.g., `picswap.yourdomain.com`)
-   - Follow Cloudflare's DNS configuration instructions
-
-### Option 2: Direct Upload
+> **Note**: Cloudflare Pages doesn't have .NET SDK pre-installed, so we build locally and upload the static files.
 
 1. **Build the project locally**
    ```bash
@@ -76,8 +31,9 @@
 
 4. **Your site is live!**
    - Access at `https://YOUR-PROJECT.pages.dev`
+   - Add custom domain if desired
 
-### Option 3: Using Wrangler CLI
+### Option 2: Using Wrangler CLI (Alternative)
 
 1. **Install Wrangler**
    ```bash
@@ -107,9 +63,80 @@
    - URL will be shown in the terminal
    - Also available in Cloudflare Dashboard
 
+### Option 3: Git Integration (Advanced)
+
+> **Note**: Requires GitHub Actions or custom build setup since Cloudflare Pages doesn't support .NET builds natively.
+
+1. **Create GitHub Actions Workflow**
+
+Create `.github/workflows/deploy.yml` in your repository:
+
+```yaml
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+      
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Build project
+        run: |
+          cd Picswap.Client
+          npm install
+          npm run build:css
+          dotnet publish -c Release -o dist
+      
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: picswap
+          directory: Picswap.Client/dist/wwwroot
+```
+
+2. **Add secrets to GitHub**
+   - Go to repository Settings → Secrets → Actions
+   - Add `CLOUDFLARE_API_TOKEN` (from Cloudflare Dashboard)
+   - Add `CLOUDFLARE_ACCOUNT_ID` (from Cloudflare Dashboard)
+
+3. **Push and auto-deploy**
+   - Every push to `main` will automatically build and deploy
+
 ## 🔄 Continuous Deployment
 
-Once set up with Git integration:
+3. **Push and auto-deploy**
+   - Every push to `main` will automatically build and deploy
+
+## 🔄 Updates After Deployment
+
+With Direct Upload or Wrangler:
+
+1. Make changes to your code
+2. Rebuild locally
+   ```bash
+   cd Picswap.Client
+   npm run build:css
+   dotnet publish -c Release -o dist
+   ```
+3. Re-upload `dist/wwwroot/` or run `wrangler pages deploy`
+
+With GitHub Actions (Option 3):
 
 1. Make changes to your code
 2. Commit and push to GitHub
@@ -118,7 +145,7 @@ Once set up with Git integration:
    git commit -m "Your changes"
    git push
    ```
-3. Cloudflare automatically rebuilds and deploys
+3. GitHub Actions automatically rebuilds and deploys
 4. Check deployment status in Cloudflare Dashboard
 
 ## 🐛 Troubleshooting
