@@ -1,22 +1,7 @@
 services:
   - type: web
     name: picswap
-    runtime: node
-    buildCommand: |
-      # Install .NET 8
-      wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
-      chmod +x ./dotnet-install.sh
-      ./dotnet-install.sh --channel 8.0 --install-dir /opt/render/.dotnet
-      export PATH="/opt/render/.dotnet:$PATH"
-      export DOTNET_ROOT="/opt/render/.dotnet"
-      
-      # Build project
-      cd Picswap.Client
-      npm install
-      npm run build:css
-      dotnet publish -c Release -o dist
-    staticPublishPath: ./Picswap.Client/dist/wwwroot
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
