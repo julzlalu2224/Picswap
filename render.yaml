@@ -1,7 +1,0 @@
-services:
-  - type: web
-    name: picswap
-    runtime: docker
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
-    plan: free
